@@ -2,6 +2,7 @@ import argparse
 import tkinter as tk
 from tkinter import messagebox
 from tkinter import font as tkfont
+from PIL import Image
 import os
 
 
@@ -69,26 +70,37 @@ def run_gui():
         # Load the image relative to the script
         script_dir = os.path.dirname(os.path.abspath(__file__))
         image_path = os.path.join(script_dir, "medieval_shield.png")
+        print(f"Tentando carregar imagem de: {image_path}")  # Debug print
 
         if os.path.exists(image_path):
-            # Using PhotoImage for PNG support (Tkinter 8.6+)
-            original_image = tk.PhotoImage(file=image_path)
+            # Using PIL to resize and convert to GIF (since ImageTk might be missing and PNG support variable)
+            pil_image = Image.open(image_path)
 
-            # Simple resizing isn't available in raw PhotoImage without PIL,
-            # so we assume the asset is reasonably sized or we sub-sample.
-            # If the image is large, we can subsample (scale down).
-            # Let's try to subsample if it's huge, but for now display as is.
-            # Ideally we would use PIL here but aiming for zero-dep if possible.
-            # The generated images are usually 1024x1024 which is too big.
-            # Let's subsample by 3 (approx 340px).
-            image = original_image.subsample(3, 3)
+            # Resize
+            base_width = 300
+            w_percent = (base_width / float(pil_image.size[0]))
+            h_size = int((float(pil_image.size[1]) * float(w_percent)))
+            pil_image = pil_image.resize(
+                (base_width, h_size), Image.Resampling.LANCZOS)
+
+            # Save as temp GIF
+            temp_gif = os.path.join(script_dir, "temp_shield.gif")
+            pil_image.save(temp_gif, "GIF")
+
+            image = tk.PhotoImage(file=temp_gif)
 
             image_label = tk.Label(root, image=image, bg="#f0f0f0")
             image_label.image = image  # Keep reference
             image_label.pack(pady=10)
+            print("Imagem carregada com sucesso (GIF convertido).")
+
+            # Note: We keep the temp file. Cleaning it up is tricky while app runs.
+            # We could use base64 encoding to avoid temp file but this is simpler.
         else:
+            print("Arquivo de imagem não encontrado.")
             tk.Label(root, text="(Imagem não encontrada)", bg="#f0f0f0").pack()
     except Exception as e:
+        print(f"Erro ao carregar imagem: {e}")
         tk.Label(
             root, text=f"(Erro ao carregar imagem: {e})", bg="#f0f0f0").pack()
 
@@ -106,15 +118,28 @@ def run_gui():
     entry_derrotas = tk.Entry(form_frame, font=label_font)
     entry_derrotas.grid(row=1, column=1, padx=5, pady=5)
 
-    # Result Label
+    # Result Frame (Bordered)
+    result_frame = tk.LabelFrame(root, text="Resultado", font=label_font,
+                                 bg="#f0f0f0", fg="#333", padx=10, pady=10)  # Added LabelFrame with text
+    result_frame.pack(pady=20, padx=20, fill="x")
+
     result_var = tk.StringVar()
-    result_label = tk.Label(root, textvariable=result_var,
-                            font=title_font, bg="#f0f0f0", fg="#555", wraplength=480)
+    result_label = tk.Label(result_frame, textvariable=result_var,
+                            font=title_font, bg="#f0f0f0", fg="#555", wraplength=450)
+    result_label.pack()
 
     def calcular():
         try:
-            v = int(entry_vitorias.get())
-            d = int(entry_derrotas.get())
+            v_str = entry_vitorias.get()
+            d_str = entry_derrotas.get()
+
+            if not v_str or not d_str:
+                messagebox.showwarning(
+                    "Aviso", "Por favor, preencha ambos os campos.")
+                return
+
+            v = int(v_str)
+            d = int(d_str)
             saldo, nivel = calcular_nivel(v, d)
             result_var.set(
                 f"O Herói tem de saldo de {saldo} está no nível de {nivel}")
@@ -128,7 +153,7 @@ def run_gui():
 
     # Buttons Frame
     btn_frame = tk.Frame(root, bg="#f0f0f0")
-    btn_frame.pack(pady=20)
+    btn_frame.pack(pady=10)
 
     btn_calc = tk.Button(btn_frame, text="Calcular",
                          command=calcular, font=label_font, bg="#d4d4d4")
@@ -137,8 +162,6 @@ def run_gui():
     btn_clear = tk.Button(btn_frame, text="Limpar",
                           command=limpar, font=label_font, bg="#d4d4d4")
     btn_clear.pack(side=tk.LEFT, padx=10)
-
-    result_label.pack(pady=20)
 
     root.mainloop()
 
