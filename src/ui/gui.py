@@ -3,6 +3,7 @@ from tkinter import messagebox
 from tkinter import font as tkfont
 from PIL import Image
 import os
+import platform
 
 
 class RankedGUI:
@@ -15,29 +16,59 @@ class RankedGUI:
         self.root = tk.Tk()
         self.setup_ui()
 
+    def get_font_family(self):
+        """
+        Determina a fonte baseada no sistema operacional.
+        """
+        os_name = platform.system()
+        family = "Times New Roman"  # Default fallback
+
+        if os_name == "Windows":
+            preferred = "Lucida Blackletter"
+        elif os_name == "Darwin":
+            preferred = "Apple Chancery"
+        else:  # Linux and others
+            preferred = "FreeSerif"
+
+        # Check if preferred is available
+        available_fonts = tkfont.families()
+        if preferred in available_fonts:
+            return preferred
+
+        # Fallback loop
+        fallbacks = ["Times New Roman", "DejaVu Serif",
+                     "Liberation Serif", "Serif"]
+        for f in fallbacks:
+            if f in available_fonts:
+                return f
+
+        return family  # Final fallback
+
     def setup_ui(self):
         self.root.title("Calculadora de partida rankeada")
         self.root.geometry("500x700")
         self.root.configure(bg="#f0f0f0")
 
         # Fonts
+        font_family = self.get_font_family()
         self.title_font = tkfont.Font(
-            family="Old English Text MT", size=24, weight="bold")
-        if "Old English Text MT" not in tkfont.families():
-            self.title_font = tkfont.Font(
-                family="Times New Roman", size=24, weight="bold")
+            family=font_family, size=24, weight="bold")
         self.label_font = tkfont.Font(family="Times New Roman", size=12)
 
         # Header
-        tk.Label(self.root, text="Calculadora de partida rankeada",
-                 font=self.title_font, bg="#f0f0f0", fg="#333").pack(pady=20)
+        self.header_label = tk.Label(
+            self.root, text="Calculadora de partida rankeada", font=self.title_font, bg="#f0f0f0", fg="#333")
+        self.header_label.pack(pady=20)
+
+        # Bind resize event to handle dynamic title wrapping
+        self.root.bind("<Configure>", self.on_window_resize)
 
         # Image
         self.load_image()
 
         # Input Form
         form_frame = tk.Frame(self.root, bg="#f0f0f0")
-        form_frame.pack(pady=20)
+        form_frame.pack(pady=10)
 
         tk.Label(form_frame, text="Vitórias:", font=self.label_font,
                  bg="#f0f0f0").grid(row=0, column=0, padx=5, pady=5)
@@ -49,23 +80,37 @@ class RankedGUI:
         self.entry_derrotas = tk.Entry(form_frame, font=self.label_font)
         self.entry_derrotas.grid(row=1, column=1, padx=5, pady=5)
 
-        # Result Frame (Bordered)
-        result_frame = tk.LabelFrame(
-            self.root, text="Resultado", font=self.label_font, bg="#f0f0f0", fg="#333", padx=10, pady=10)
-        result_frame.pack(pady=20, padx=20, fill="x")
-
-        self.result_var = tk.StringVar()
-        tk.Label(result_frame, textvariable=self.result_var,
-                 font=self.title_font, bg="#f0f0f0", fg="#555", wraplength=450).pack()
-
-        # Buttons
+        # Buttons - Moved to bottom pack to ensure stability
         btn_frame = tk.Frame(self.root, bg="#f0f0f0")
-        btn_frame.pack(pady=10)
+        btn_frame.pack(side=tk.BOTTOM, pady=30)
 
         tk.Button(btn_frame, text="Calcular", command=self.calcular,
-                  font=self.label_font, bg="#d4d4d4").pack(side=tk.LEFT, padx=10)
+                  font=self.label_font, bg="#d4d4d4", width=10).pack(side=tk.LEFT, padx=10)
         tk.Button(btn_frame, text="Limpar", command=self.limpar,
-                  font=self.label_font, bg="#d4d4d4").pack(side=tk.LEFT, padx=10)
+                  font=self.label_font, bg="#d4d4d4", width=10).pack(side=tk.LEFT, padx=10)
+
+        # Result Frame (Bordered) - Packed after inputs, fills remaining space but doesn't push buttons off
+        result_frame = tk.LabelFrame(
+            self.root, text="Resultado", font=self.label_font, bg="#f0f0f0", fg="#333", padx=10, pady=10)
+        result_frame.pack(pady=10, padx=20, fill="x")
+
+        self.result_var = tk.StringVar()
+        self.result_label = tk.Label(result_frame, textvariable=self.result_var,
+                                     font=self.title_font, bg="#f0f0f0", fg="#555", wraplength=450)
+        self.result_label.pack()
+
+    def on_window_resize(self, event):
+        """
+        Adjusts title and result wrapping based on window width.
+        """
+        # Ensure we are handling the root window resize (event.widget is the widget that triggered event)
+        if event.widget == self.root:
+            new_width = event.width
+            # Subtract some padding (e.g., 40px for title, 60px for result to account for frame)
+            if hasattr(self, 'header_label'):
+                self.header_label.config(wraplength=new_width - 40)
+            if hasattr(self, 'result_label'):
+                self.result_label.config(wraplength=new_width - 60)
 
     def load_image(self):
         try:
@@ -82,8 +127,8 @@ class RankedGUI:
             if os.path.exists(image_path):
                 pil_image = Image.open(image_path)
 
-                # Resize
-                base_width = 300
+                # Resize (Reduced by 30% from 300 -> ~210)
+                base_width = 210
                 w_percent = (base_width / float(pil_image.size[0]))
                 h_size = int((float(pil_image.size[1]) * float(w_percent)))
                 pil_image = pil_image.resize(
