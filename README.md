@@ -19,10 +19,25 @@ calcula o saldo de Rankeadas (vitórias - derrotas) e determina o nível baseand
 
 ## Como Executar
 
-Certifique-se de ter o Python instalado. Execute o comando abaixo no terminal:
+Certifique-se de ter o Python instalado.
+
+### Modo Gráfico (GUI)
+
+Execute o comando sem parâmetros para abrir a interface gráfica:
 
 ```bash
 python3 main.py
 ```
 
-Siga as instruções digitando a quantidade de vitórias e derrotas quando solicitado.
+### Modo Linha de Comando (CLI)
+
+Para executar no terminal, utilize a flag `--cli` ou `-c`:
+
+```bash
+python3 main.py --cli
+```
+ou
+```bash
+python3 main.py -c
+```
+
