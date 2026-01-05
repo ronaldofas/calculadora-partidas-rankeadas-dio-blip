@@ -41,3 +41,31 @@ ou
 python3 main.py -c
 ```
 
+## Estrutura do Projeto
+
+O projeto foi refatorado para seguir uma arquitetura modular:
+
+```
+project_root/
+├── assets/
+│   └── medieval_shield.png        <-- Imagem do escudo
+├── src/
+│   ├── logic/
+│   │   ├── __init__.py
+│   │   └── calculator.py          <-- Lógica (RankedCalculator)
+│   └── ui/
+│       ├── __init__.py
+│       ├── cli.py                 <-- Interface Linha de Comando (RankedCLI)
+│       └── gui.py                 <-- Interface Gráfica (RankedGUI)
+├── main.py                        <-- Ponto de entrada
+├── .gitignore                     <-- Arquivos ignorados pelo Git
+└── README.md                      <-- Documentação
+```
+
+- `assets/`: Contém os recursos visuais (imagens).
+- `src/`: Contém o código-fonte organizado por responsabilidade.
+  - `logic/`: Contém a lógica de negócios (`calculator.py`).
+  - `ui/`: Contém as interfaces de usuário (`cli.py` e `gui.py`).
+- `main.py`: Ponto de entrada da aplicação.
+
+
